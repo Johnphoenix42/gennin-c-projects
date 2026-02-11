@@ -38,20 +38,18 @@ double calcSSyy(size_t n, double sumYY, double sumY)
     return sumYY - sumY * sumY / n;
 }
 
-double calcPearsonsCorrelationCoefficient(double *xValues, double *yValues, size_t n)
+double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
 {
     double sumX, sumY, sumXSquared, sumYSquared, sumXY;
     double ssxy, ssxx, ssyy;
     int i;
 
     for (i = 0; i < n; i++) {
-        sumX += *xValues;
-        sumY += *yValues;
-        sumXSquared += pow(*xValues, 2);
-        sumYSquared += pow(*yValues, 2);
-        sumXY += *xValues * *yValues;
-        xValues++;
-        yValues++;
+        sumX += (xyPair + i)->x;
+        sumY += (xyPair + i)->y;
+        sumXSquared += pow((xyPair + i)->x, 2);
+        sumYSquared += pow((xyPair + i)->y, 2);
+        sumXY += (xyPair + i)->x * (xyPair + i)->y;
     }
     ssxy = calcSSxy(n, sumXY, sumX, sumY);
     ssxx = calcSSxx(n, sumXSquared, sumX);
@@ -60,31 +58,27 @@ double calcPearsonsCorrelationCoefficient(double *xValues, double *yValues, size
 }
 
 int main (int argc, char **argv) {
-    Pair *pairArr;
+    Pair *pairPtr = NULL;
     Pair pair;
     size_t n = 0;
     int scanRes;
     /*for (int i = 0; i < argc; i++) {
         printarg(argv[i]);
     }*/
-    pairArr = calloc(0, sizeof(Pair));
-    printf("Enter sets of point in the format x,y\n");
-    scanRes = scanf("%lf,%lf", &pair.x, &pair.y);
-    while (scanRes == 2) {
-        Pair *pairPtr = realloc(pairArr, (n + 1) * sizeof(Pair));
+    printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
+    while ((scanRes = scanf("%lf,%lf", &pair.x, &pair.y)) == 2) {
+        pairPtr = realloc(pairPtr, (n + 1) * sizeof(Pair));
         if (pairPtr == NULL) printf("Pair struct was not succesfully allocated\n");
-        for (int i = 0; i < n; i++){
-            *(pairPtr + i) = *(pairArr + i);
-        }
         (pairPtr + n)->x = pair.x;
         (pairPtr + n)->y = pair.y;
-        pairArr = pairPtr;
-        printf("pointer assigned\n");
+        //printf("pointer assigned\n");
         n++;
-        printf("Got to the end of the loop\n");
-        scanRes = scanf("%lf,%lf", &pair.x, &pair.y);
-        printf("Loop started;  scanRes = %d\n", scanRes);
     }
-    free(pairArr);
+    for (size_t i = 0; i < n; i++) {
+        printf("%.4lf\t%.4lf\n", (pairPtr + i)->x, (pairPtr + i)->y);
+    }
+    double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, n);
+    printf("pearson correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient);
+    free(pairPtr);
     return EXIT_SUCCESS;
 }
