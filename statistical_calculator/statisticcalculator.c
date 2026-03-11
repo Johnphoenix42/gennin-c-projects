@@ -42,9 +42,8 @@ double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
 {
     double sumX, sumY, sumXSquared, sumYSquared, sumXY;
     double ssxy, ssxx, ssyy;
-    int i;
 
-    for (i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         sumX += (xyPair + i)->x;
         sumY += (xyPair + i)->y;
         sumXSquared += pow((xyPair + i)->x, 2);
@@ -55,6 +54,14 @@ double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
     ssxx = calcSSxx(n, sumXSquared, sumX);
     ssyy = calcSSyy(n, sumYSquared, sumY);
     return ssxy/sqrt(ssxx * ssyy);
+}
+
+double calculateSpearmanRankCoefficient(Pair *xyPair, size_t n) 
+{
+    Pair x_rank, y_rank;
+    for (int i = 0; i < n; i++) {
+    }
+    return 0;
 }
 
 int main (int argc, char **argv) {
