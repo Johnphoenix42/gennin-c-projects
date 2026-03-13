@@ -15,6 +15,11 @@ typedef struct pair {
     double x, y;
 } Pair, *PairPtr;
 
+typedef struct throuple {
+    int index; 
+    double data, rank;
+} Throuple;
+
 void printarg(char *arg) {
     printf("arg: %s\t%zu\t(", arg, strlen(arg));
     for (int i = 0; i < strlen(arg); i++) {
@@ -56,15 +61,47 @@ double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
     return ssxy/sqrt(ssxx * ssyy);
 }
 
-double calculateSpearmanRankCoefficient(Pair *xyPair, size_t n) 
+Pair *get_rank(const Pair *xyPair, size_t n)
 {
-    Pair x_rank, y_rank;
-    for (int i = 0; i < n; i++) {
+    //Generate a throuple for each of the xyPair column
+    Throuple mthrouple[2][n], sortedThrouple[2][n];
+    for (int j = 0; j < 2; ++j) {
+        for (int i = 0; i < n; ++i) {
+            mthrouple[j][i].index = i;
+            mthrouple[j][i].data = (xyPair + i)->x;
+            sortedThrouple[j][i].index = i;
+            sortedThrouple[j][i].data = (xyPair + i)->y;
+        }
     }
-    return 0;
+    // sort through sortedThrouple
+    for (int h = 0; h < 2; ++h) {
+        for (int i = 0; i < n; ++i) {
+            double temp_data = sortedThrouple[h][i].data;
+            for (int j = i - 1; j >= 0; --j) {
+                if (sortedThrouple[h][j].data < temp_data) {
+                    sortedThrouple[h][j].data = temp_data;
+                    break;
+                }
+                sortedThrouple[h][j+1].data = sortedThrouple[h][j].data;
+            }
+        }
+    }
+}
+
+double calculateSpearmanRankCoefficient(const Pair *xyPair, size_t n) 
+{
+    // x_rank.x is the value, x_rank.y is the rank;
+    Pair *rank = get_rank(xyPair, n);
+    double rank_diff_squared = 0;
+    for (int i = 0; i < n; i++) {
+        rank_diff_squared += pow(rank->y - (rank+1)->y, 2);
+    }
+    return 1 - (6 * rank_diff_squared) / (pow(n, 3) - n);
 }
 
 int main (int argc, char **argv) {
+    //What is the difference between char * and const char * in formal parameters
+
     Pair *pairPtr = NULL;
     Pair pair;
     size_t n = 0;
@@ -88,4 +125,17 @@ int main (int argc, char **argv) {
     printf("pearson correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient);
     free(pairPtr);
     return EXIT_SUCCESS;
+}
+
+void *sort_numbers(int *array, size_t n) {
+    for (int i = 1; i < n; i++) {
+        int temp = *(array + i);
+        for (int j = i - 1; j >= 0; j--) {
+            if (temp > *(array + j)){
+                *(array + j + 1) = *(array + j);
+            }
+            *(array + j) = temp;
+        }
+        printf("%d\n", i);
+    }
 }
