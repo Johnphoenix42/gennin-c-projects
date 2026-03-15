@@ -21,6 +21,8 @@ typedef struct rank_and_pair {
     int size;
 } RankPair;
 
+RankPair *insertion_sort(float *data, size_t n);
+
 void printarg(char *arg) {
     printf("arg: %s\t%zu\t(", arg, strlen(arg));
     for (int i = 0; i < strlen(arg); i++) {
@@ -62,20 +64,26 @@ double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
     return ssxy/sqrt(ssxx * ssyy);
 }
 
-Pair *get_rank(const Pair *xyPair, size_t n)
+Pair *get_rank(float *data, size_t n)
 {
-    RankPair *insertion_sort(float *data, size_t n);
-    RankPair *rank_and_pair = insertion_sort((float *)xyPair, n);
-    return rank_and_pair -> unordered_pair;
+    RankPair *rankPair = insertion_sort(data, n);
+    Pair *unordered_pair = malloc(sizeof(Pair));
+    unordered_pair = rankPair -> unordered_pair;
+
+    free(rankPair->ordered_pair);
+    free(rankPair->unordered_pair);
+    free(rankPair);
+    return unordered_pair;
 }
 
-double calculateSpearmanRankCoefficient(const Pair *xyPair, size_t n) 
+double calculateSpearmanRankCoefficient(float *xData, float *yData, size_t n) 
 {
-    // x_rank.x is the value, x_rank.y is the rank;
-    Pair *rank = get_rank(xyPair, n);
+    Pair *xrank = get_rank(xData, n);
+    Pair *yrank = get_rank(yData, n);
     double rank_diff_squared = 0;
     for (int i = 0; i < n; i++) {
-        rank_diff_squared += pow(rank->y - (rank+1)->y, 2);
+        //printf("%.2f\t%.2f\t%.2f", xrank->y, pow(xrank->y - yrank->y, 2));
+        rank_diff_squared += pow((double)(xrank->y) - (double)(yrank->y), 2);
     }
     return 1 - (6 * rank_diff_squared) / (pow(n, 3) - n);
 }
@@ -83,44 +91,45 @@ double calculateSpearmanRankCoefficient(const Pair *xyPair, size_t n)
 int main (int argc, char **argv) {
     //What is the difference between char * and const char * in formal parameters
 
-    RankPair *insertion_sort(float *data, size_t n);
-
     Pair *pairPtr = NULL;
+    float *xData = NULL;
+    float *yData = NULL;
     Pair pair;
     size_t n = 0;
     int scanRes;
     /*for (int i = 0; i < argc; i++) {
         printarg(argv[i]);
     }*/
-    /*printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
+    printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
     while ((scanRes = scanf("%lf,%lf", &pair.x, &pair.y)) == 2) {
         pairPtr = realloc(pairPtr, (n + 1) * sizeof(Pair));
+        xData = realloc(xData, (n + 1) * sizeof(float));
+        yData = realloc(yData, (n + 1) * sizeof(float));
         if (pairPtr == NULL) printf("Pair struct was not succesfully allocated\n");
         (pairPtr + n)->x = pair.x;
+        *(xData + n) = pair.x;
         (pairPtr + n)->y = pair.y;
-        //printf("pointer assigned\n");
+        *(yData + n) = pair.y;
         n++;
     }
     for (size_t i = 0; i < n; i++) {
         printf("%.4lf\t%.4lf\n", (pairPtr + i)->x, (pairPtr + i)->y);
     }
     double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, n);
-    printf("pearson correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient);
-    free(pairPtr);*/
+    double spearmanCorrelationCoefficient = calculateSpearmanRankCoefficient(xData, yData, n);
+    printf("pearson correlation coefficient = %.4lf\nspearman rank correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient, spearmanCorrelationCoefficient);
+    free(pairPtr);
 
     float data[] = {94, 86, 74, 21, 86, 75, 86};
-    RankPair *rankPair = insertion_sort(data, 7);
-    printf("%-10s%-10s\n", "Data", "Rank");
-    /*for (int i = 0; i < rankPair -> size; ++i) {
-        printf("%-10.2f%-10.2f\n", ((rankPair->ordered_pair) + i) -> x, ((rankPair->ordered_pair) + i) -> y);
-    }*/
+    /*RankPair *rankPair = insertion_sort(data, 7);
     printf("%-10s%-10s\n", "Data", "Rank");
     for (int i = 0; i < rankPair -> size; ++i) {
+        printf("%-10.2f%-10.2f\n", ((rankPair->ordered_pair) + i) -> x, ((rankPair->ordered_pair) + i) -> y);
+    }*/
+    /*printf("%-10s%-10s\n", "Data", "Rank");
+    for (int i = 0; i < rankPair -> size; ++i) {
         printf("%-10.2f%-10.2f\n", ((rankPair->unordered_pair) + i) -> x, ((rankPair->unordered_pair) + i) -> y);
-    }
-    free(rankPair->ordered_pair);
-    free(rankPair->unordered_pair);
-    free(rankPair);
+    }*/
     return EXIT_SUCCESS;
 }
 
