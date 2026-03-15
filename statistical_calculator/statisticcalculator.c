@@ -16,14 +16,10 @@ typedef struct pair {
 } Pair;
 
 typedef struct rank_and_pair {
-    Pair ordered_pair;
-    float *unordered_rank;
+    Pair *ordered_pair;
+    Pair *unordered_pair;
+    int size;
 } RankPair;
-
-typedef struct throuple {
-    int index; 
-    double data, rank;
-} Throuple;
 
 void printarg(char *arg) {
     printf("arg: %s\t%zu\t(", arg, strlen(arg));
@@ -68,29 +64,9 @@ double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
 
 Pair *get_rank(const Pair *xyPair, size_t n)
 {
-    //Generate a throuple for each of the xyPair column
-    Throuple mthrouple[2][n], sortedThrouple[2][n];
-    for (int j = 0; j < 2; ++j) {
-        for (int i = 0; i < n; ++i) {
-            mthrouple[j][i].index = i;
-            mthrouple[j][i].data = (xyPair + i)->x;
-            sortedThrouple[j][i].index = i;
-            sortedThrouple[j][i].data = (xyPair + i)->y;
-        }
-    }
-    // sort through sortedThrouple
-    for (int h = 0; h < 2; ++h) {
-        for (int i = 0; i < n; ++i) {
-            double temp_data = sortedThrouple[h][i].data;
-            for (int j = i - 1; j >= 0; --j) {
-                if (sortedThrouple[h][j].data < temp_data) {
-                    sortedThrouple[h][j].data = temp_data;
-                    break;
-                }
-                sortedThrouple[h][j+1].data = sortedThrouple[h][j].data;
-            }
-        }
-    }
+    RankPair *insertion_sort(float *data, size_t n);
+    RankPair *rank_and_pair = insertion_sort((float *)xyPair, n);
+    return rank_and_pair -> unordered_pair;
 }
 
 double calculateSpearmanRankCoefficient(const Pair *xyPair, size_t n) 
@@ -133,11 +109,18 @@ int main (int argc, char **argv) {
     free(pairPtr);*/
 
     float data[] = {94, 86, 74, 21, 86, 75, 86};
-    Pair *sortedPairs = insertion_sort(data, 7);
+    RankPair *rankPair = insertion_sort(data, 7);
     printf("%-10s%-10s\n", "Data", "Rank");
-    for (int i = 0; i < 7; ++i) {
-        printf("%-10.2f\t%-10.2f\n", (sortedPairs + i) -> x, (sortedPairs + i) -> y);
+    /*for (int i = 0; i < rankPair -> size; ++i) {
+        printf("%-10.2f%-10.2f\n", ((rankPair->ordered_pair) + i) -> x, ((rankPair->ordered_pair) + i) -> y);
+    }*/
+    printf("%-10s%-10s\n", "Data", "Rank");
+    for (int i = 0; i < rankPair -> size; ++i) {
+        printf("%-10.2f%-10.2f\n", ((rankPair->unordered_pair) + i) -> x, ((rankPair->unordered_pair) + i) -> y);
     }
+    free(rankPair->ordered_pair);
+    free(rankPair->unordered_pair);
+    free(rankPair);
     return EXIT_SUCCESS;
 }
 
@@ -155,10 +138,12 @@ void *sort_numbers(int *array, size_t n) {
 }
 
 RankPair *insertion_sort(float *data, size_t n) {
+    RankPair *rank_and_pair = malloc(sizeof(RankPair));
     Pair *pair = calloc(n, sizeof(Pair));
     pair -> x = *data;
     pair -> y = 1;
-    float unordered_rank[n];
+    int sortmap[n];
+    *sortmap = 0;
     for (int i = 1; i < n; i++) {
         float temp = *(data + i);
         int sum = 0, nofequals = 1;
@@ -169,18 +154,26 @@ RankPair *insertion_sort(float *data, size_t n) {
                 float rank = sum / nofequals;
                 for (int k = j; k < j + nofequals; k++) {
                     (pair + k) -> y = rank;
-                    unordered_rank[i] = rank;
                 }
+                *(sortmap + j) = i;
                 break;
             }
             (pair + j) -> x = (pair + j - 1) -> x;
             (pair + j) -> y = j + 1;
-            unordered_rank[i] = j + 1;
+            *(sortmap + j) = *(sortmap + j - 1);
             if (temp == (pair + j) -> x) {
                 ++nofequals;
                 sum += (pair + j) -> y;
             }
         }
     }
-    return pair;
+    Pair *unsorted_pair = calloc(n, sizeof(float));
+    for (int i = 0; i < n; ++i) {
+        (unsorted_pair + sortmap[i]) -> x = *(data + i);
+        (unsorted_pair + sortmap[i]) -> y = (pair + i) -> y;
+    }
+    rank_and_pair -> ordered_pair = pair;
+    rank_and_pair -> unordered_pair = unsorted_pair;
+    rank_and_pair -> size = n;
+    return rank_and_pair;
 }
