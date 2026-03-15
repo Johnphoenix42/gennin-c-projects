@@ -13,7 +13,12 @@ typedef struct node {
 
 typedef struct pair {
     double x, y;
-} Pair, *PairPtr;
+} Pair;
+
+typedef struct rank_and_pair {
+    Pair ordered_pair;
+    float *unordered_rank;
+} RankPair;
 
 typedef struct throuple {
     int index; 
@@ -102,6 +107,8 @@ double calculateSpearmanRankCoefficient(const Pair *xyPair, size_t n)
 int main (int argc, char **argv) {
     //What is the difference between char * and const char * in formal parameters
 
+    RankPair *insertion_sort(float *data, size_t n);
+
     Pair *pairPtr = NULL;
     Pair pair;
     size_t n = 0;
@@ -109,7 +116,7 @@ int main (int argc, char **argv) {
     /*for (int i = 0; i < argc; i++) {
         printarg(argv[i]);
     }*/
-    printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
+    /*printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
     while ((scanRes = scanf("%lf,%lf", &pair.x, &pair.y)) == 2) {
         pairPtr = realloc(pairPtr, (n + 1) * sizeof(Pair));
         if (pairPtr == NULL) printf("Pair struct was not succesfully allocated\n");
@@ -123,7 +130,14 @@ int main (int argc, char **argv) {
     }
     double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, n);
     printf("pearson correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient);
-    free(pairPtr);
+    free(pairPtr);*/
+
+    float data[] = {94, 86, 74, 21, 86, 75, 86};
+    Pair *sortedPairs = insertion_sort(data, 7);
+    printf("%-10s%-10s\n", "Data", "Rank");
+    for (int i = 0; i < 7; ++i) {
+        printf("%-10.2f\t%-10.2f\n", (sortedPairs + i) -> x, (sortedPairs + i) -> y);
+    }
     return EXIT_SUCCESS;
 }
 
@@ -138,4 +152,35 @@ void *sort_numbers(int *array, size_t n) {
         }
         printf("%d\n", i);
     }
+}
+
+RankPair *insertion_sort(float *data, size_t n) {
+    Pair *pair = calloc(n, sizeof(Pair));
+    pair -> x = *data;
+    pair -> y = 1;
+    float unordered_rank[n];
+    for (int i = 1; i < n; i++) {
+        float temp = *(data + i);
+        int sum = 0, nofequals = 1;
+        for(int j = i;  j >= 0; j--) {
+            if (j <= 0 || temp > (pair + j - 1) -> x ) {
+                (pair + j) -> x = temp;
+                sum += j + 1;
+                float rank = sum / nofequals;
+                for (int k = j; k < j + nofequals; k++) {
+                    (pair + k) -> y = rank;
+                    unordered_rank[i] = rank;
+                }
+                break;
+            }
+            (pair + j) -> x = (pair + j - 1) -> x;
+            (pair + j) -> y = j + 1;
+            unordered_rank[i] = j + 1;
+            if (temp == (pair + j) -> x) {
+                ++nofequals;
+                sum += (pair + j) -> y;
+            }
+        }
+    }
+    return pair;
 }
