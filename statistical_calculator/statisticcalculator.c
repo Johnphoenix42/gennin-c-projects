@@ -110,8 +110,8 @@ int main (int argc, char **argv) {
 
     float data[] = {94, 86, 74, 21, 86, 75, 86};
     RankPair *rankPair = insertion_sort(data, 7);
-    printf("%-10s%-10s\n", "Data", "Rank");
-    /*for (int i = 0; i < rankPair -> size; ++i) {
+    /*printf("%-10s%-10s\n", "Data", "Rank");
+    for (int i = 0; i < rankPair -> size; ++i) {
         printf("%-10.2f%-10.2f\n", ((rankPair->ordered_pair) + i) -> x, ((rankPair->ordered_pair) + i) -> y);
     }*/
     printf("%-10s%-10s\n", "Data", "Rank");
@@ -146,7 +146,7 @@ RankPair *insertion_sort(float *data, size_t n) {
     *sortmap = 0;
     for (int i = 1; i < n; i++) {
         float temp = *(data + i);
-        int sum = 0, nofequals = 1;
+        float sum = 0, nofequals = 1;
         for(int j = i;  j >= 0; j--) {
             if (j <= 0 || temp > (pair + j - 1) -> x ) {
                 (pair + j) -> x = temp;
@@ -159,7 +159,7 @@ RankPair *insertion_sort(float *data, size_t n) {
                 break;
             }
             (pair + j) -> x = (pair + j - 1) -> x;
-            (pair + j) -> y = j + 1;
+            (pair + j) -> y = (pair + j - 1) -> y + 1;
             *(sortmap + j) = *(sortmap + j - 1);
             if (temp == (pair + j) -> x) {
                 ++nofequals;
@@ -167,9 +167,9 @@ RankPair *insertion_sort(float *data, size_t n) {
             }
         }
     }
-    Pair *unsorted_pair = calloc(n, sizeof(float));
+    Pair *unsorted_pair = calloc(n, sizeof(Pair));
     for (int i = 0; i < n; ++i) {
-        (unsorted_pair + sortmap[i]) -> x = *(data + i);
+        (unsorted_pair + i) -> x = *(data + i);
         (unsorted_pair + sortmap[i]) -> y = (pair + i) -> y;
     }
     rank_and_pair -> ordered_pair = pair;
