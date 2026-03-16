@@ -143,7 +143,7 @@ RankPair *get_rank(float *data, size_t n) {
     *sortmap = 0;
     for (int i = 1; i < n; i++) {
         float temp = *(data + i);
-        int sum = 0, nofequals = 1;
+        float sum = 0, nofequals = 1;
         for(int j = i;  j >= 0; j--) {
             if (j <= 0 || temp > (pair + j - 1) -> x ) {
                 (pair + j) -> x = temp;
@@ -156,7 +156,7 @@ RankPair *get_rank(float *data, size_t n) {
                 break;
             }
             (pair + j) -> x = (pair + j - 1) -> x;
-            (pair + j) -> y = j + 1;
+            (pair + j) -> y = (pair + j - 1) -> y + 1;
             *(sortmap + j) = *(sortmap + j - 1);
             if (temp == (pair + j) -> x) {
                 ++nofequals;
