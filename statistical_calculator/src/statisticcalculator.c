@@ -90,9 +90,11 @@ int main (int argc, char **argv) {
     Pair pair;
     size_t n = 0;
     int scanRes;
-    /*for (int i = 0; i < argc; i++) {
+
+    for (int i = 0; i < argc; i++) {
         printarg(argv[i]);
-    }*/
+    }
+
     printf("Use test values: (Y)/N: ");
     int c = getchar();
     if (c == 'Y' || c == 'y'){
@@ -102,7 +104,7 @@ int main (int argc, char **argv) {
         //pairPtr = calloc(10, sizeof(Pair));
         xData = xval;
         yData = yval;
-        size_t length = (sizeof xval) / sizeof (float);
+        size_t length = sizeof (xval) / sizeof (xval[0]);
         RankPair *xrankPair = get_rank(xData, length);
         RankPair *yrankPair = get_rank(yData, length);
         
