@@ -21,15 +21,8 @@ typedef struct rank_and_pair {
     int size;
 } RankPair;
 
-RankPair *get_rank(float *data, size_t n);
-
-void printarg(char *arg) {
-    printf("arg: %s\t%zu\t(", arg, strlen(arg));
-    for (int i = 0; i < strlen(arg); i++) {
-        printf(" %02x", arg[i]);
-    }
-    printf(" )\n");
-}
+RankPair *get_rank(double *data, size_t size);
+Pair *convert_to_pair(double *x_val, double *y_val, size_t size);
 
 double calcSSxy(size_t n, double sumXY, double sumX, double sumY)
 {
@@ -46,25 +39,28 @@ double calcSSyy(size_t n, double sumYY, double sumY)
     return sumYY - sumY * sumY / n;
 }
 
-double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t n)
+/**
+ * Calculates the Pearson correlation coefficient based on an array of x,y value pairs and size of the pairs
+ */
+double calcPearsonsCorrelationCoefficient(Pair *xyPair, size_t size)
 {
     double sumX, sumY, sumXSquared, sumYSquared, sumXY;
     double ssxy, ssxx, ssyy;
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < size; i++) {
         sumX += (xyPair + i)->x;
         sumY += (xyPair + i)->y;
         sumXSquared += pow((xyPair + i)->x, 2);
         sumYSquared += pow((xyPair + i)->y, 2);
         sumXY += (xyPair + i)->x * (xyPair + i)->y;
     }
-    ssxy = calcSSxy(n, sumXY, sumX, sumY);
-    ssxx = calcSSxx(n, sumXSquared, sumX);
-    ssyy = calcSSyy(n, sumYSquared, sumY);
+    ssxy = calcSSxy(size, sumXY, sumX, sumY);
+    ssxx = calcSSxx(size, sumXSquared, sumX);
+    ssyy = calcSSyy(size, sumYSquared, sumY);
     return ssxy/sqrt(ssxx * ssyy);
 }
 
-double calculateSpearmanRankCoefficient(float *xData, float *yData, size_t n) 
+double calculateSpearmanRankCoefficient(double *xData, double *yData, size_t n) 
 {
     RankPair *xrank = get_rank(xData, n);
     RankPair *yrank = get_rank(yData, n);
@@ -80,63 +76,66 @@ double calculateSpearmanRankCoefficient(float *xData, float *yData, size_t n)
         );
     }
     printf("rank_diff_squared = %.2lf\n", rank_diff_squared);
+    free(xrank->ordered_pair);
+    free(xrank->unordered_pair);
+    free(xrank);
+    free(yrank->ordered_pair);
+    free(yrank->unordered_pair);
+    free(yrank);
     return 1 - (6 * rank_diff_squared) / (pow(n, 3) - n);
 }
 
 int main (int argc, char **argv) {
     Pair *pairPtr = NULL;
-    float *xData = NULL;
-    float *yData = NULL;
+    double *xData = NULL;
+    double *yData = NULL;
     Pair pair;
-    size_t n = 0;
+    size_t size = 0;
     int scanRes;
 
     for (int i = 0; i < argc; i++) {
-        printarg(argv[i]);
+        printf("arg: %s,\t length: %zu,\t type: %s\n", argv[i], strlen(argv[i]), (*argv[i] == '-' ? "option" : "command"));
     }
 
     printf("Use test values: (Y)/N: ");
     int c = getchar();
-    if (c == 'Y' || c == 'y'){
-        float xval[10] = {75, 80, 93, 65, 87, 71, 98, 68, 84, 77};
-        float yval[10] = {82, 78, 86, 72, 91, 80, 95, 72, 89, 74};
-        float data[] = {94, 86, 74, 21, 86, 75, 86};
-        //pairPtr = calloc(10, sizeof(Pair));
-        xData = xval;
-        yData = yval;
-        size_t length = sizeof (xval) / sizeof (xval[0]);
-        RankPair *xrankPair = get_rank(xData, length);
-        RankPair *yrankPair = get_rank(yData, length);
+    if (c == 'Y' || c == 'y' || c == "\n"){
+        double xval[10] = {75, 80, 93, 65, 87, 71, 98, 68, 84, 77};
+        double yval[10] = {82, 78, 86, 72, 91, 80, 95, 72, 89, 74};
         
-        double spearmanCorrelationCoefficient = calculateSpearmanRankCoefficient(xData, yData, length);
-        printf("\nspearman rank correlation coefficient = %.4lf\n", spearmanCorrelationCoefficient);
+        size_t length = sizeof (xval) / sizeof (*xval);
+
+        pairPtr = convert_to_pair(xval, yval, length);
+        double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, length);
+        double spearmanCorrelationCoefficient = calculateSpearmanRankCoefficient(xval, yval, length);
+        printf("\npearson correlation coefficient = %.4lf\nspearman rank correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient, spearmanCorrelationCoefficient);
     } else {
         printf("Enter sets of point in the format x,y\tBreak the rule to exit\n");
         while ((scanRes = scanf("%lf,%lf", &pair.x, &pair.y)) == 2) {
-            pairPtr = realloc(pairPtr, (n + 1) * sizeof(Pair));
-            xData = realloc(xData, (n + 1) * sizeof(float));
-            yData = realloc(yData, (n + 1) * sizeof(float));
+            pairPtr = realloc(pairPtr, (size + 1) * sizeof(Pair));
+            xData = realloc(xData, (size + 1) * sizeof(float));
+            yData = realloc(yData, (size + 1) * sizeof(float));
             if (pairPtr == NULL) printf("Pair struct was not succesfully allocated\n");
-            (pairPtr + n)->x = pair.x;
-            *(xData + n) = pair.x;
-            (pairPtr + n)->y = pair.y;
-            *(yData + n) = pair.y;
-            n++;
+            (pairPtr + size)->x = pair.x;
+            *(xData + size) = pair.x;
+            (pairPtr + size)->y = pair.y;
+            *(yData + size) = pair.y;
+            size++;
         }
-        for (size_t i = 0; i < n; i++) {
+        for (size_t i = 0; i < size; i++) {
             printf("%.4lf\t%.4lf\n", (pairPtr + i)->x, (pairPtr + i)->y);
         }
-        double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, n);
-        double spearmanCorrelationCoefficient = calculateSpearmanRankCoefficient(xData, yData, n);
+        double pearsonCorrelationCoefficient = calcPearsonsCorrelationCoefficient(pairPtr, size);
+        double spearmanCorrelationCoefficient = calculateSpearmanRankCoefficient(xData, yData, size);
         printf("pearson correlation coefficient = %.4lf\nspearman rank correlation coefficient = %.4lf\n", pearsonCorrelationCoefficient, spearmanCorrelationCoefficient);
-        free(pairPtr);
         free(xData);
         free(yData);
     }
+    free(pairPtr);
     return EXIT_SUCCESS;
 }
 
-RankPair *get_rank(float *data, size_t n) {
+RankPair *get_rank(double *data, size_t n) {
     RankPair *rank_and_pair = (RankPair *) malloc(sizeof(RankPair));
     Pair *pair = calloc(n, sizeof(Pair));
     pair -> x = *data;
@@ -175,4 +174,25 @@ RankPair *get_rank(float *data, size_t n) {
     rank_and_pair -> unordered_pair = unsorted_pair;
     rank_and_pair -> size = n;
     return rank_and_pair;
+}
+
+Pair *convert_to_pair(double *x_val, double *y_val, size_t size) 
+{
+    Pair *pairPtr;
+    size_t x_length = sizeof (x_val) / sizeof (*x_val);
+    size_t y_length = sizeof y_val / sizeof *y_val;
+    if (x_length > y_length) {
+        puts("There are more x values than y values.");
+        puts("Proceeding with available complete pairs");
+    } else if (x_length < y_length) {
+        puts("There are more y values than x values.");
+        puts("Proceeding with available complete pairs");
+    }
+    
+    pairPtr = malloc(size * sizeof (Pair));
+    for (size_t i = 0; i < size; i++) {
+        (pairPtr + i)->x = x_val[i];
+        (pairPtr + i)->y = y_val[i];
+    }
+    return pairPtr;
 }
